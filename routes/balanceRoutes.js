@@ -58,4 +58,41 @@ router.post("/add-balance", async (req, res) => {
   }
 });
 
+router.post("/add-expense", async (req, res) => {
+  try {
+    const { userId, amount } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    if (typeof amount !== "number" || amount <= 0) {
+      return res.status(400).json({ message: "Invalid amount" });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.currentBalance < amount) {
+      return res.status(400).json({ message: "Not enough money" });
+    }
+
+    user.currentBalance -= amount;
+
+    user.transactions.push({
+      type: "expense",
+      amount,
+    });
+
+    await user.save();
+
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 export default router;
