@@ -3,7 +3,6 @@ import User from "../models/User.js";
 
 const router = express.Router();
 
-// Создать пользователя с начальным балансом
 router.post("/init-balance", async (req, res) => {
   try {
     const { amount } = req.body;
@@ -23,6 +22,39 @@ router.post("/init-balance", async (req, res) => {
     res.status(500).json({
       message: error.message,
     });
+  }
+});
+
+router.post("/add-balance", async (req, res) => {
+  try {
+    const { userId, amount } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    if (typeof amount !== "number" || amount <= 0) {
+      return res.status(400).json({ message: "Invalid amount" });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.currentBalance += amount;
+
+    user.transactions.push({
+      type: "income",
+      amount,
+    });
+
+    await user.save();
+
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
